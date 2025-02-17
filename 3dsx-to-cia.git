@@ -1,0 +1,62 @@
+#include <3ds.h>
+#include <stdio.h>
+#include <string>
+#include <vector>
+#include "file_browser.h"
+#include "cia_converter.h"
+
+void drawUI();
+void handleUserInput();
+
+int main() {
+    gfxInitDefault();
+    consoleInit(GFX_TOP, NULL);
+    
+    printf("3DSX to CIA Converter\n");
+    printf("Browse for a .3dsx file to convert.\n\n");
+    
+    std::string selectedFile = openFileBrowser("/3ds/");
+    
+    if (!selectedFile.empty()) {
+        printf("Selected: %s\n", selectedFile.c_str());
+        printf("Converting...\n");
+        
+        std::string outputPath = convert3dsxToCia(selectedFile);
+        
+        if (!outputPath.empty()) {
+            printf("Conversion complete!\n");
+            printf("Save to SD card or install now?\n");
+            
+            printf("Press A to install, B to save to SD card.\n");
+            
+            while (aptMainLoop()) {
+                hidScanInput();
+                u32 kDown = hidKeysDown();
+                
+                if (kDown & KEY_A) {
+                    printf("Installing CIA...\n");
+                    installCia(outputPath);
+                    break;
+                } else if (kDown & KEY_B) {
+                    printf("Saved at: %s\n", outputPath.c_str());
+                    break;
+                }
+            }
+        } else {
+            printf("Conversion failed.\n");
+        }
+    }
+    
+    printf("Press Start to exit.\n");
+    
+    while (aptMainLoop()) {
+        hidScanInput();
+        if (hidKeysDown() & KEY_START) break;
+        gfxFlushBuffers();
+        gfxSwapBuffers();
+        gspWaitForVBlank();
+    }
+    
+    gfxExit();
+    return 0;
+}
